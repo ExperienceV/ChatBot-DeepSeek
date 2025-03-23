@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chatbot</title>
+    <style>
+        pre {
+            background-color: #f4f4f4;
+            padding: 10px;
+            border-radius: 5px;
+            overflow-x: auto;
+        }
+        code {
+            font-family: Consolas, "Courier New", monospace;
+            color: #d63384;
+        }
+    </style>
+</head>
+<body>
+    <h1>Chatbot con DeepSeek</h1>
+    <form onsubmit="sendMessage(event)">
+        <input type="text" id="messageInput" autocomplete="off">
+        <button type="submit">Enviar</button>
+    </form>
+    <ul id="messages"></ul>
+    <script>
+        const ws = new WebSocket("ws://localhost:8000/ws");
+    
+        ws.onmessage = function(event) {
+    const messages = document.getElementById("messages");
+
+    // Obtener el texto del mensaje y eliminar espacios innecesarios
+    let texto = event.data.trim();
+
+    // Verificar que el texto tenga suficientes caracteres para aplicar el recorte
+    if (texto.length > 7) {
+        texto = texto.slice(3, -4); // Elimina los primeros 3 y los últimos 4 caracteres
+    } else {
+        texto = ""; // Si no hay suficientes caracteres, deja el texto vacío
+    }
+
+    // Obtener el último mensaje en la lista
+    let lastMessage = messages.lastElementChild;
+
+    // Si no hay mensajes previos o el último mensaje está marcado como completo, crea un nuevo <li>
+    if (!lastMessage || lastMessage.getAttribute("data-complete") === "true") {
+        lastMessage = document.createElement("li");
+        lastMessage.setAttribute("data-complete", "false");
+        lastMessage.innerHTML = "<p></p>"; // Iniciar con un solo <p>
+        messages.appendChild(lastMessage);
+    }
+
+    // Obtener el párrafo dentro del <li>
+    let paragraph = lastMessage.querySelector("p");
+
+    // Convertir el string a HTML real usando innerHTML
+    paragraph.innerHTML += texto;
+};
+
+        function sendMessage(event) {
+            event.preventDefault();
+            const input = document.getElementById("messageInput");
+    
+            // Crear un nuevo elemento para el mensaje del usuario
+            const messages = document.getElementById("messages");
+            const newMessage = document.createElement("li");
+            newMessage.innerHTML = `<strong>Tú:</strong> ${input.value}`;
+            newMessage.setAttribute("data-complete", "true"); // Marcar como mensaje completo
+            messages.appendChild(newMessage);
+    
+            ws.send(input.value);
+            input.value = "";
+        }
+    </script>
+    
+    
+</body>
+</html>
